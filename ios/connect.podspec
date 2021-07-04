@@ -9,13 +9,19 @@ Pod::Spec.new do |s|
   s.description      = <<-DESC
 A new Flutter project.
                        DESC
-  s.homepage         = 'http://example.com'
+  s.homepage         = 'http://fuse.io'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Fuse' => 'email@example.com' }
+  s.author           = { 'Fuse' => 'murainoy@yahoo.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
-  s.platform = :ios, '8.0'
+  s.dependency 'WalletConnectSwift'
+  s.dependency 'web3swift'
+  s.vendored_libraries = 'web3swift','WalletConnectSwift'
+
+
+  s.platform = :ios, '11.0'
+
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
