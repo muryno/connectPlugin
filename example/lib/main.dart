@@ -44,6 +44,61 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+/// pass qrcode wc url
+  Future<void> connectFromScannedWc(String wc) async {
+    String result;
+    try {
+      result =
+          await Connect.ConnectFromWc(wc) ?? 'Unknown  ';
+    } on PlatformException {
+      result = 'Failed to get platform version.';
+    }
+    if (!mounted) return;
+
+   print(result);
+  }
+
+  /// pass qrcode wc url
+  Future<void> passBridgeUrlToCreateWCUrl(String wc) async {
+    String result;
+    try {
+      result =
+          await Connect.generateWCConnect(wc) ?? 'Unknown  ';
+    } on PlatformException {
+      result = 'Failed to get platform version.';
+    }
+    if (!mounted) return;
+
+    print(result);
+  }
+
+  //discoonect
+ disconnectConnection() async {
+    String result;
+    try {
+           Connect.diconnectConnection() ;
+    } on PlatformException {
+      result = 'Failed to get platform version.';
+    }
+    if (!mounted) return;
+  }
+
+
+  passWallectAddress(String wd) async {
+    String result;
+    try {
+           Connect.Transfer(wd);
+    } on PlatformException {
+      result = 'Failed to get platform version.';
+    }
+    if (!mounted) return;
+
+
+  }
+
+  ///passWallet Address
+
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
