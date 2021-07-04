@@ -1,12 +1,21 @@
 package com.fuse.connect
 
+import android.content.Intent
+import android.net.Uri
 import androidx.annotation.NonNull
-
+import androidx.core.content.ContextCompat.startActivity
+import com.native_communication.event.WallectConnectApplication
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.walletconnect.Session
+import org.walletconnect.nullOnThrow
 
 /** ConnectPlugin */
 class ConnectPlugin: FlutterPlugin, MethodCallHandler, Session.Callback, EventChannel.StreamHandler {
@@ -17,9 +26,24 @@ class ConnectPlugin: FlutterPlugin, MethodCallHandler, Session.Callback, EventCh
   private lateinit var channel : MethodChannel
 
 
+  ///Async
+  var eventChannel: EventChannel? = null
+
+
+  private var txRequest: Long? = null
+
+  private var eventSink: EventChannel.EventSink? = null
+
+
+  private val uiScope = CoroutineScope(Dispatchers.Main)
+
+
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "connect")
     channel.setMethodCallHandler(this)
+
+    eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "aconnect")
+    eventChannel!!.setStreamHandler(this)
   }
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
@@ -27,7 +51,7 @@ class ConnectPlugin: FlutterPlugin, MethodCallHandler, Session.Callback, EventCh
     when (call.method) {
       "connectToWcWithDeepLink" -> {
         //bridge url
-      var result =    walletConnectToWC(call.arguments as String)
+        walletConnectToWC(call.arguments as String)
       }
       "connectFromWc" -> {
         //Wallect Connect Url
@@ -49,6 +73,8 @@ class ConnectPlugin: FlutterPlugin, MethodCallHandler, Session.Callback, EventCh
       }
     }
 
+
+
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
@@ -57,11 +83,11 @@ class ConnectPlugin: FlutterPlugin, MethodCallHandler, Session.Callback, EventCh
 
 
 
-  private   fun connectFromWc(wcUrl: String){
-
-    val i = Intent(Intent.ACTION_VIEW)
-    i.data = Uri.parse(wcUrl)
-    startActivity(i)
+  private   fun connectFromWc(wcUrl: String):String{
+    initialSetup()
+    WallectConnectApplication.resetSession(wcUrl)
+    WallectConnectApplication.session.addCallback(this)
+    return  WallectConnectApplication.config.toWCUri()
   }
 
   override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
@@ -80,6 +106,7 @@ class ConnectPlugin: FlutterPlugin, MethodCallHandler, Session.Callback, EventCh
       Session.Status.Closed -> sessionClosed()
       Session.Status.Connected, Session.Status.Disconnected,
       is Session.Status.Error -> {
+
         eventSink?.success(mapOf(
           "status" to false,
           "message" to "Error with connection"
@@ -114,15 +141,14 @@ class ConnectPlugin: FlutterPlugin, MethodCallHandler, Session.Callback, EventCh
 
   private fun walletConnectToWC(str:String ){
     initialSetup()
-    WallectConnectApplication.resetSession(str)
+    WallectConnectApplication.connectWithBridgeUrl(str)
     WallectConnectApplication.session.addCallback(this)
-    val i = Intent(Intent.ACTION_VIEW)
-    i.data = Uri.parse(WallectConnectApplication.config.toWCUri())
-    startActivity(i)
+
   }
 
   private fun disconnectButton() {
     WallectConnectApplication.session.kill()
+    WallectConnectApplication.session.removeCallback(this)
   }
 
   ///transfer
@@ -169,10 +195,8 @@ class ConnectPlugin: FlutterPlugin, MethodCallHandler, Session.Callback, EventCh
     }
   }
 
-  override fun onDestroy() {
-    WallectConnectApplication.session.removeCallback(this)
-    super.onDestroy()
-  }
+
+
 
 
 }

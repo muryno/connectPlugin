@@ -60,6 +60,20 @@ class WallectConnectApplication : MultiDexApplication() {
             session.offer()
         }
 
+        fun connectWithBridgeUrl(bridgeServerUrl: String) {
+            nullOnThrow { session }?.clearCallbacks()
+
+            config = Session.Config.fromWCUri(bridgeServerUrl)
+
+            session = WCSession(config,
+                MoshiPayloadAdapter(moshi),
+                storage,
+                OkHttpTransport.Builder(client, moshi),
+                Session.PeerMeta(name = "wallectConnect")
+            )
+            session.offer()
+        }
+
 
     }
 }
